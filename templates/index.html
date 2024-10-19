@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Kalkulator Całek</title>
-    <link rel="icon" href="{{ url_for('static', filename='favicon.ico') }}" type="image/x-icon">
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -31,6 +30,11 @@
             border-radius: 4px;
             border: 1px solid #ccc;
         }
+        input:focus {
+            border-color: #4169E1;
+            outline: none;
+            box-shadow: 0 0 5px rgba(65, 105, 225, 0.5);
+        }
         button {
             background-color: #4682B4;
             color: white;
@@ -43,10 +47,22 @@
             margin-top: 20px;
         }
         .result p {
-            font-size: 18px;
+            font-size: 20px;
+            font-weight: bold;
+            color: #333;
         }
         img {
             max-width: 100%;
+        }
+        .loader {
+            display: none;
+            text-align: center;
+            font-size: 18px;
+            color: #4682B4;
+        }
+        .error {
+            color: red;
+            font-weight: bold;
         }
     </style>
 </head>
@@ -70,6 +86,8 @@
         <button type="submit">Oblicz całkę</button>
     </form>
 
+    <div class="loader" id="loader">Przetwarzanie...</div>
+
     <div class="result" id="wynik">
         <!-- Wynik obliczeń -->
     </div>
@@ -83,7 +101,23 @@
     document.getElementById('calc-form').addEventListener('submit', function(e) {
         e.preventDefault();
 
+        const a = parseFloat(document.getElementById('a').value);
+        const b = parseFloat(document.getElementById('b').value);
+        const n = parseInt(document.getElementById('n').value);
+
+        if (a >= b) {
+            alert("Początek przedziału (a) musi być mniejszy niż koniec przedziału (b).");
+            return;
+        }
+        if (n <= 0) {
+            alert("Liczba prostokątów (n) musi być większa od zera.");
+            return;
+        }
+
         const formData = new FormData(this);
+
+        // Pokaż loader
+        document.getElementById('loader').style.display = 'block';
 
         // Obliczenie całki
         fetch('/oblicz', {
@@ -93,6 +127,12 @@
         .then(response => response.json())
         .then(data => {
             document.getElementById('wynik').innerHTML = `<p>Wynik całki: ${data.wynik}</p>`;
+        })
+        .catch(error => {
+            document.getElementById('wynik').innerHTML = `<p class="error">Wystąpił błąd: ${error.message}</p>`;
+        })
+        .finally(() => {
+            document.getElementById('loader').style.display = 'none';
         });
 
         // Rysowanie wykresu
@@ -103,6 +143,9 @@
         .then(response => response.json())
         .then(data => {
             document.getElementById('wykres').innerHTML = `<img src="data:image/png;base64,${data.wykres}"/>`;
+        })
+        .catch(error => {
+            document.getElementById('wykres').innerHTML = `<p class="error">Nie udało się wygenerować wykresu: ${error.message}</p>`;
         });
     });
 </script>
